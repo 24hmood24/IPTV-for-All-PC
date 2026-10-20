@@ -1,0 +1,34 @@
+# Builds the Windows installer from the private code repo. Runs here because
+# Actions in public repos is free. Started by tool/release.sh in the code repo.
+name: Build Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit of 24hmood24/iptv-for-all to build
+        required: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 24hmood24/iptv-for-all
+          ref: ${{ inputs.ref }}
+          ssh-key: ${{ secrets.CODE_DEPLOY_KEY }}
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.6
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build windows --release
+      - name: Build installer
+        run: iscc windows\installer.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: IPTVforALL-Setup
+          path: build/installer/IPTVforALL-Setup.exe
+          retention-days: 7
